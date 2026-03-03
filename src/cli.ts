@@ -10,6 +10,7 @@ import { runExport } from './commands/export.js'
 import { runSync } from './commands/sync.js'
 import { runLog } from './commands/log.js'
 import { runShare } from './commands/share.js'
+import { runSchedule } from './commands/schedule.js'
 
 const program = new Command()
 
@@ -169,6 +170,16 @@ program
       process.exit(1)
     }
     runShare({ json: opts.json })
+  })
+
+program
+  .command('schedule')
+  .description('Set up or manage the daily auto-check-in job (launchd on macOS, cron on Linux)')
+  .option('--time <HH:MM>', 'Time to run daily check-in (24-hour format)', '21:00')
+  .option('--remove', 'Remove the daily auto-check-in job')
+  .option('--status', 'Show whether a schedule is installed')
+  .action(async (opts) => {
+    await runSchedule({ time: opts.time, remove: opts.remove, status: opts.status })
   })
 
 program.parseAsync(process.argv).catch((err) => {

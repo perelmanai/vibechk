@@ -34,14 +34,32 @@ export async function runCheckIn(options: CheckInOptions & {
 
   if (!options.source || options.source === 'claude-code') {
     const spinner = ora({ text: 'Detecting coding session…', isSilent: options.quiet }).start()
-    const detection = await detectTodaySession(today, profile.timezone, profile.preferences.sessionSources)
+    const detection = await detectTodaySession(
+      today,
+      profile.timezone,
+      profile.preferences.sessionSources,
+      profile.preferences.watchedRepos ?? [],
+    )
     spinner.stop()
 
     if (detection.detected) {
       source = detection.source
       agentData = detection.agentData
     } else if (options.noInteractive) {
-      source = 'manual'
+      // Scheduler / automation context — nothing detected, don't silently check in.
+      // A streak should only continue when there's genuine evidence of a coding session.
+      if (!options.quiet) {
+        console.log(chalk.dim('  No coding session detected today. Streak unchanged.'))
+      }
+      const currentStreak = loadStreak()
+      return {
+        action: 'skipped' as any,
+        streak: currentStreak.currentStreak,
+        previousStreak: undefined,
+        newMilestones: [],
+        freezeTokensRemaining: currentStreak.freezeTokens,
+        agentData: undefined,
+      }
     } else if (!options.quiet) {
       // No auto-detection — prompt for manual
       const doManual = await confirm({

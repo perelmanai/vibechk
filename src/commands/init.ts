@@ -1,10 +1,11 @@
-import { input, confirm, select } from '@inquirer/prompts'
+import { input, confirm } from '@inquirer/prompts'
 import chalk from 'chalk'
 import { v4 as uuidv4 } from 'uuid'
 import { saveProfile } from '../storage/profile-store.js'
 import { saveStreak } from '../storage/streak-store.js'
 import { DEFAULT_STREAK } from '../storage/streak-store.js'
 import { systemTimezone } from '../core/date-utils.js'
+import { installSchedule } from './schedule.js'
 import type { UserProfile } from '../types/index.js'
 
 export async function runInit(): Promise<void> {
@@ -68,10 +69,11 @@ export async function runInit(): Promise<void> {
     preferences: {
       shareOnLeaderboard: share,
       notificationsEnabled: false,
-      notificationTime: '19:00',
+      notificationTime: '21:00',
       celebrationLevel: 'normal',
-      sessionSources: ['claude-code', 'manual'],
+      sessionSources: ['claude-code', 'git', 'manual'],
       weekendsCount: true,
+      watchedRepos: [],
     },
   }
 
@@ -80,5 +82,28 @@ export async function runInit(): Promise<void> {
 
   console.log('')
   console.log(chalk.green(`✓ Profile created! Welcome, ${chalk.bold(profile.username)}.`))
+
+  // Offer to install the daily scheduler so the streak tracks itself
+  console.log('')
+  const scheduleIt = await confirm({
+    message: 'Set up automatic daily check-in at 9 PM? (recommended)',
+    default: true,
+  })
+
+  if (scheduleIt) {
+    try {
+      await installSchedule('21:00', profile)
+      console.log(chalk.green('✓ Daily auto-check-in scheduled.'))
+      console.log(chalk.dim('  vibechk will detect your coding sessions automatically each evening.'))
+      console.log(chalk.dim('  Run `vibechk schedule --help` to change the time or disable it.'))
+    } catch (err: any) {
+      console.log(chalk.yellow(`  Could not install schedule automatically: ${err.message}`))
+      console.log(chalk.dim('  Run `vibechk schedule` manually to set it up.'))
+    }
+  } else {
+    console.log(chalk.dim('  Run `vibechk schedule` any time to enable automatic daily tracking.'))
+  }
+
+  console.log('')
   console.log(chalk.dim(`  Run ${chalk.white('vibechk')} to check in your first session.\n`))
 }

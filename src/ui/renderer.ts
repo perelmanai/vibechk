@@ -54,7 +54,7 @@ function nextMilestone(currentStreak: number): { days: number; daysAway: number 
 
 export function renderStatus(
   profile: UserProfile,
-  streak: StreakRecord,
+  streak: StreakRecord & { _expiredStreak?: number },
   activity: ActivityEntry[],
   { quiet = false, json = false } = {},
 ): string {
@@ -65,9 +65,12 @@ export function renderStatus(
   const today = todayInTz(profile.timezone)
   const secsLeft = secondsUntilMidnight(profile.timezone)
   const isProtected = streak.lastActivityDate === today
+  const isExpired = streak.status === 'broken' && streak._expiredStreak !== undefined
 
-  const streakEmoji = streak.currentStreak >= 100 ? '💯' : streak.currentStreak >= 30 ? '🏆' : '🔥'
-  const statusLabel = isProtected
+  const streakEmoji = isExpired ? '🌱' : streak.currentStreak >= 100 ? '💯' : streak.currentStreak >= 30 ? '🏆' : '🔥'
+  const statusLabel = isExpired
+    ? chalk.dim(`Last streak: ${streak._expiredStreak}d — run ${chalk.white('vibechk')} to start fresh`)
+    : isProtected
     ? chalk.green('✓ Protected for today')
     : secsLeft < 3600
     ? chalk.red(`⚠ ${formatCountdown(secsLeft)} left to check in!`)
@@ -108,7 +111,7 @@ export function renderStatus(
   return boxen(lines.join('\n'), {
     padding: { top: 0, bottom: 0, left: 1, right: 1 },
     borderStyle: 'round',
-    borderColor: isProtected ? 'green' : streak.currentStreak > 0 ? 'yellow' : 'gray',
+    borderColor: isExpired ? 'gray' : isProtected ? 'green' : streak.currentStreak > 0 ? 'yellow' : 'gray',
     title: ' vibechk ',
     titleAlignment: 'center',
   })

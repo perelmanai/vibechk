@@ -1,4 +1,4 @@
-export type ActivitySource = 'claude-code' | 'manual' | 'git-hook' | 'api' | 'import'
+export type ActivitySource = 'claude-code' | 'git' | 'manual' | 'git-hook' | 'api' | 'import'
 
 export type CelebrationLevel = 'minimal' | 'normal' | 'enthusiastic'
 
@@ -15,6 +15,7 @@ export interface UserPreferences {
   celebrationLevel: CelebrationLevel
   sessionSources: ActivitySource[]
   weekendsCount: boolean
+  watchedRepos: string[] // paths to git repos for auto-detection (empty = auto-discover)
 }
 
 export interface UserProfile {

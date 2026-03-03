@@ -1,10 +1,13 @@
 import { requireProfile } from '../storage/profile-store.js'
 import { loadStreak } from '../storage/streak-store.js'
 import { loadActivity } from '../storage/activity-store.js'
+import { calculateStreakImpact } from '../core/streak-calculator.js'
+import { todayInTz } from '../core/date-utils.js'
 import { renderStatus } from '../ui/renderer.js'
 import { startDashboard } from '../web/server.js'
 import openBrowser from 'open'
 import chalk from 'chalk'
+import type { StreakRecord } from '../types/index.js'
 
 export async function runStatus(options: {
   quiet?: boolean
@@ -12,8 +15,19 @@ export async function runStatus(options: {
   web?: boolean
 } = {}): Promise<void> {
   const profile = requireProfile()
-  const streak = loadStreak()
+  const stored = loadStreak()
   const activity = loadActivity()
+  const today = todayInTz(profile.timezone)
+
+  // Dry-run recalculation: surface the real effective streak rather than
+  // the last-persisted value. If the streak has already broken (missed >2 days
+  // with no grace left), show the user an honest 0 with the previous best
+  // so they aren't surprised when they run check-in.
+  const impact = calculateStreakImpact(stored, today, false)
+  const streak: StreakRecord & { _expiredStreak?: number } =
+    impact.action === 'broken'
+      ? { ...stored, currentStreak: 0, status: 'broken', _expiredStreak: stored.currentStreak }
+      : stored
 
   if (options.web) {
     const url = await startDashboard(false)
