@@ -21,8 +21,11 @@ export function loadActivity(): ActivityEntry[] {
   }
 }
 
-/** Get the last N days of activity */
+/** Get activity entries within the last N calendar days (inclusive of today) */
 export function recentActivity(days = 30): ActivityEntry[] {
   const all = loadActivity()
-  return all.slice(-days)
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - (days - 1))
+  const cutoffStr = cutoff.toISOString().slice(0, 10)
+  return all.filter((a) => a.date >= cutoffStr)
 }

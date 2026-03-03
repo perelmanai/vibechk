@@ -82,6 +82,13 @@ export function renderStatus(
     return diff >= 0 && diff < 7
   })
 
+  // 30-day consistency: how many of the last 30 calendar days had activity
+  const thirtyDaysAgo = dayjs(today).subtract(29, 'day').format('YYYY-MM-DD')
+  const activeLast30 = activity.filter((a) => a.date >= thirtyDaysAgo && a.date <= today).length
+  const consistencyPct = Math.round((activeLast30 / 30) * 100)
+  const consistencyColor = consistencyPct >= 80 ? chalk.green : consistencyPct >= 50 ? chalk.yellow : chalk.red
+  const consistencyLabel = consistencyColor(`${consistencyPct}%`) + chalk.dim(` (${activeLast30}/30 days)`)
+
   if (quiet) {
     return `${streak.currentStreak}d streak`
   }
@@ -89,8 +96,9 @@ export function renderStatus(
   const lines = [
     `${streakEmoji} ${chalk.bold.yellow(streak.currentStreak + '-day streak')}  ${statusLabel}`,
     ``,
-    `Progress  ${progressBar}`,
-    `Longest   ${chalk.cyan(streak.longestStreak + 'd')}  │  Freezes ${freezeDisplay}`,
+    `Progress     ${progressBar}`,
+    `Longest      ${chalk.cyan(streak.longestStreak + 'd')}  │  Freezes ${freezeDisplay}`,
+    `Consistency  ${consistencyLabel}`,
     ``,
     weekCalendar(recentWeek, profile.timezone),
     ``,
@@ -123,9 +131,13 @@ export function renderCheckIn(
   }
 
   if (action === 'broken') {
-    lines.push(chalk.red(`✗ Streak broken.`) + chalk.dim(` (was ${previousStreak} days)`))
-    lines.push(chalk.yellow(`  Starting fresh — day 1. You got this.`))
-    return boxen(lines.join('\n'), { padding: 1, borderColor: 'red', borderStyle: 'round' })
+    if (previousStreak && previousStreak > 0) {
+      lines.push(chalk.cyan(`Your ${previousStreak}-day streak was real.`))
+      lines.push(chalk.dim(`  Every day you showed up counted. That doesn't disappear.`))
+      lines.push(``)
+    }
+    lines.push(chalk.yellow(`🌱 Day 1. Fresh start.`))
+    return boxen(lines.join('\n'), { padding: 1, borderColor: 'cyan', borderStyle: 'round' })
   }
 
   const actionEmoji =

@@ -8,6 +8,8 @@ import { runFreeze } from './commands/freeze.js'
 import { runLeaderboard } from './commands/leaderboard.js'
 import { runExport } from './commands/export.js'
 import { runSync } from './commands/sync.js'
+import { runLog } from './commands/log.js'
+import { runShare } from './commands/share.js'
 
 const program = new Command()
 
@@ -143,6 +145,30 @@ program
       process.exit(1)
     }
     await runStatus({ web: true })
+  })
+
+program
+  .command('log')
+  .alias('l')
+  .description('Show your last 30 days as a calendar with consistency %')
+  .action(() => {
+    if (!dataExists()) {
+      console.log(chalk.yellow('  Run `vibechk init` first.\n'))
+      process.exit(1)
+    }
+    runLog()
+  })
+
+program
+  .command('share')
+  .description('Generate shareable text about your current streak')
+  .option('--json', 'Output as JSON')
+  .action((opts) => {
+    if (!dataExists()) {
+      console.log(chalk.yellow('  Run `vibechk init` first.\n'))
+      process.exit(1)
+    }
+    runShare({ json: opts.json })
   })
 
 program.parseAsync(process.argv).catch((err) => {
