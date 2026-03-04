@@ -63,12 +63,23 @@ const makeProfile = (): UserProfile => ({
   username: 'testuser',
   timezone: 'UTC',
   createdAt: '2026-01-01T00:00:00.000Z',
+  cloudSync: null,
+  preferences: {
+    shareOnLeaderboard: true,
+    notificationsEnabled: false,
+    notificationTime: '21:00',
+    celebrationLevel: 'normal',
+    sessionSources: ['claude-code'],
+    weekendsCount: true,
+    watchedRepos: [],
+  },
 })
 
 const makeStreak = (overrides: Partial<StreakRecord> = {}): StreakRecord => ({
   currentStreak: 5,
   longestStreak: 10,
   lastActivityDate: TODAY,
+  lastCheckInAt: null,
   freezeTokens: 2,
   graceUsedAt: null,
   totalCheckIns: 15,

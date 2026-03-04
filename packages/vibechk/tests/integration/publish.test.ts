@@ -64,6 +64,7 @@ const makeStreak = (overrides: Partial<StreakRecord> = {}): StreakRecord => ({
   currentStreak: 7,
   longestStreak: 14,
   lastActivityDate: TODAY,
+  lastCheckInAt: null,
   freezeTokens: 2,
   graceUsedAt: null,
   totalCheckIns: 20,

@@ -1,56 +1,17 @@
 {
-  "name": "vibechk",
-  "version": "0.1.0",
-  "description": "Daily streak tracker for vibe coders — tracks your AI-assisted coding sessions and lets you compare streaks with friends",
+  "name": "vibechk-workspace",
+  "private": true,
   "type": "module",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
-  },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "bin": {
-    "vibechk": "./dist/cli.js"
-  },
-  "files": [
-    "dist",
-    "README.md"
+  "workspaces": [
+    "packages/vibechk",
+    "server"
   ],
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "test": "vitest",
-    "test:run": "vitest run",
-    "typecheck": "tsc --noEmit",
-    "start": "node dist/cli.js",
-    "server": "node dist/server.js"
-  },
-  "keywords": [
-    "streak",
-    "coding",
-    "vibe-coding",
-    "claude-code",
-    "productivity",
-    "habit",
-    "tracker",
-    "cli"
-  ],
-  "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "@inquirer/prompts": "^8.3.0",
-    "boxen": "^7.1.1",
-    "chalk": "^4.1.2",
-    "commander": "^12.1.0",
-    "dayjs": "^1.11.13",
-    "inquirer": "^10.2.2",
-    "open": "^10.1.0",
-    "ora": "^6.3.1",
-    "proper-lockfile": "^4.1.2",
-    "uuid": "^10.0.0"
+    "build": "npm run build --workspace=packages/vibechk && npm run build --workspace=server",
+    "test": "npm run test --workspace=packages/vibechk",
+    "test:run": "npm run test:run --workspace=packages/vibechk",
+    "typecheck": "npm run typecheck --workspace=packages/vibechk",
+    "server": "npm run start --workspace=server"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
