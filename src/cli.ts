@@ -11,6 +11,8 @@ import { runSync } from './commands/sync.js'
 import { runLog } from './commands/log.js'
 import { runShare } from './commands/share.js'
 import { runSchedule } from './commands/schedule.js'
+import { runFriendAdd, runFriendRemove, runFriendPull, runFriendList } from './commands/friend.js'
+import { runPublish } from './commands/publish.js'
 
 const program = new Command()
 
@@ -181,6 +183,58 @@ program
   .action(async (opts) => {
     await runSchedule({ time: opts.time, remove: opts.remove, status: opts.status })
   })
+
+// ── Friends ─────────────────────────────────────────────────────────────────
+
+// `vibechk friends` — shortcut to list
+program
+  .command('friends')
+  .description('Show your friends\' streaks')
+  .action(() => { requireInit(); runFriendList() })
+
+const friendCmd = program
+  .command('friend')
+  .description('Manage friend subscriptions')
+
+friendCmd
+  .command('add <alias> <url>')
+  .description('Subscribe to a friend\'s streak (give them a local alias and their publish URL)')
+  .action(async (alias: string, url: string) => { requireInit(); await runFriendAdd(alias, url) })
+
+friendCmd
+  .command('remove <alias>')
+  .description('Unsubscribe from a friend')
+  .action((alias: string) => { requireInit(); runFriendRemove(alias) })
+
+friendCmd
+  .command('pull')
+  .description('Refresh all friends\' streak data now')
+  .option('-q, --quiet', 'Suppress output')
+  .action(async (opts) => { requireInit(); await runFriendPull({ quiet: opts.quiet }) })
+
+friendCmd
+  .command('list')
+  .description('List all friends and their streaks')
+  .action(() => { requireInit(); runFriendList() })
+
+// ── Publish ──────────────────────────────────────────────────────────────────
+
+program
+  .command('publish')
+  .description('Publish your streak to a GitHub Gist so friends can subscribe')
+  .option('--gist', 'Publish to GitHub Gist (default)')
+  .option('--stdout', 'Print the JSON to stdout instead')
+  .option('--token <token>', 'GitHub personal access token (gist scope)')
+  .action(async (opts) => { requireInit(); await runPublish({ gist: opts.gist, stdout: opts.stdout, token: opts.token }) })
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+function requireInit(): void {
+  if (!dataExists()) {
+    console.log(chalk.yellow('  Run `vibechk init` first.\n'))
+    process.exit(1)
+  }
+}
 
 program.parseAsync(process.argv).catch((err) => {
   console.error(chalk.red('Error:'), err.message)

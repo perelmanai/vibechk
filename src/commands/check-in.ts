@@ -176,6 +176,15 @@ export async function runCheckIn(options: CheckInOptions & {
     pushStreak(profile, newStreakRecord, badges).catch(() => {/* silent fail */})
   }
 
+  // After a successful auto check-in, silently sync friends:
+  //   1. Re-publish your own Gist so friends see your latest streak
+  //   2. Pull fresh data from all friends
+  // This keeps the daily cron job fully self-sustaining.
+  if (!options.dryRun && options.noInteractive && finalImpact.action !== 'already_checked_in') {
+    import('./publish.js').then(({ runPublish }) => runPublish({ silent: true })).catch(() => {})
+    import('./friend.js').then(({ runFriendPull }) => runFriendPull({ quiet: true })).catch(() => {})
+  }
+
   return {
     action: finalImpact.action,
     streak: newStreakRecord.currentStreak,

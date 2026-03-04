@@ -3,6 +3,7 @@ export type { StreakStatus, StreakRecord, StreakAction, StreakImpact } from './s
 export type { AgentData, ActivityEntry } from './activity.js'
 export type { MilestoneRarity, MilestoneDefinition, EarnedBadge, BadgesRecord } from './badges.js'
 export type { LeaderboardEntry, LeaderboardCache } from './leaderboard.js'
+export type { PublicProfile, FriendEntry, FriendsFile } from './friends.js'
 
 export interface CheckInOptions {
   source?: ActivitySource

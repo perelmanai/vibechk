@@ -8,6 +8,8 @@ export const STREAK_PATH = join(VIBECHK_DIR, 'streak.json')
 export const ACTIVITY_PATH = join(VIBECHK_DIR, 'activity.jsonl')
 export const BADGES_PATH = join(VIBECHK_DIR, 'badges.json')
 export const LEADERBOARD_CACHE_PATH = join(VIBECHK_DIR, 'leaderboard.json')
+export const FRIENDS_PATH = join(VIBECHK_DIR, 'friends.json')
+export const GIST_TOKEN_PATH = join(VIBECHK_DIR, 'gist-token')  // mode 0o600, never synced
 
 export function ensureDir(): void {
   if (!existsSync(VIBECHK_DIR)) {
