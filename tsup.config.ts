@@ -41,4 +41,18 @@ export default defineConfig([
       js: '#!/usr/bin/env node',
     },
   },
+  // Server: standalone ESM bundle, no npm deps (pure Node built-ins only)
+  {
+    entry: { server: 'server/index.ts' },
+    format: ['esm'],
+    dts: false,
+    clean: false,
+    platform: 'node',
+    target: 'node18',
+    outDir: 'dist',
+    splitting: false,
+    banner: {
+      js: '#!/usr/bin/env node',
+    },
+  },
 ])

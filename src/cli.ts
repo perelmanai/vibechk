@@ -197,9 +197,9 @@ const friendCmd = program
   .description('Manage friend subscriptions')
 
 friendCmd
-  .command('add <alias> <url>')
-  .description('Subscribe to a friend\'s streak (give them a local alias and their publish URL)')
-  .action(async (alias: string, url: string) => { requireInit(); await runFriendAdd(alias, url) })
+  .command('add <alias> [url]')
+  .description('Subscribe to a friend\'s streak by username (URL optional if they use the vibechk server)')
+  .action(async (alias: string, url?: string) => { requireInit(); await runFriendAdd(alias, url) })
 
 friendCmd
   .command('remove <alias>')
@@ -221,10 +221,10 @@ friendCmd
 
 program
   .command('publish')
-  .description('Publish your streak to a GitHub Gist so friends can subscribe')
-  .option('--gist', 'Publish to GitHub Gist (default)')
-  .option('--stdout', 'Print the JSON to stdout instead')
-  .option('--token <token>', 'GitHub personal access token (gist scope)')
+  .description('Publish your streak to the vibechk server so friends can subscribe by username')
+  .option('--gist', 'Publish to GitHub Gist instead of the vibechk server')
+  .option('--stdout', 'Print the JSON to stdout instead of publishing')
+  .option('--token <token>', 'GitHub personal access token (gist scope, only used with --gist)')
   .action(async (opts) => { requireInit(); await runPublish({ gist: opts.gist, stdout: opts.stdout, token: opts.token }) })
 
 // ─────────────────────────────────────────────────────────────────────────────

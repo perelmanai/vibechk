@@ -32,6 +32,14 @@ vi.mock('../../src/core/milestone-checker.js', () => ({
   createEarnedBadges: vi.fn(),
   totalFreezeReward: vi.fn(),
 }))
+vi.mock('../../src/storage/paths.js', () => ({
+  VIBECHK_SERVER: 'https://vibechk.test',
+  VIBECHK_DIR: '/tmp/vibechk-test',
+  FRIENDS_PATH: '/tmp/vibechk-test/friends.json',
+  GIST_TOKEN_PATH: '/tmp/vibechk-test/gist-token',
+  ensureDir: vi.fn(),
+  dataExists: vi.fn(),
+}))
 
 import { runFriendAdd, runFriendRemove, runFriendList, runFriendPull } from '../../src/commands/friend.js'
 import { loadFriends, saveFriends, getFriendByAlias } from '../../src/storage/friends-store.js'
@@ -195,6 +203,36 @@ describe('friend commands', () => {
       await runFriendAdd('charlie', 'https://example.com/charlie.json')
       // Should save the entry and not throw
       expect(mockSaveFriends).toHaveBeenCalledOnce()
+    })
+
+    it('resolves URL from server when no URL given', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => makePublicProfile({ username: 'alice' }),
+      } as Response)
+
+      let savedData: FriendsFile | null = null
+      mockSaveFriends.mockImplementation((data) => { savedData = data })
+
+      await runFriendAdd('alice')  // no URL
+      expect(savedData!.friends[0].url).toBe('https://vibechk.test/u/alice.json')
+      expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+        'https://vibechk.test/u/alice.json',
+        expect.objectContaining({ headers: expect.anything() }),
+      )
+    })
+
+    it('explicit URL overrides server resolution', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => makePublicProfile({ username: 'alice' }),
+      } as Response)
+
+      let savedData: FriendsFile | null = null
+      mockSaveFriends.mockImplementation((data) => { savedData = data })
+
+      await runFriendAdd('alice', 'https://custom.example.com/alice.json')
+      expect(savedData!.friends[0].url).toBe('https://custom.example.com/alice.json')
     })
   })
 

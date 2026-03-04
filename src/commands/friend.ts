@@ -4,6 +4,7 @@ import { requireProfile } from '../storage/profile-store.js'
 import { loadStreak } from '../storage/streak-store.js'
 import { todayInTz, daysBetween, friendlyDate } from '../core/date-utils.js'
 import { getAllMilestones } from '../core/milestone-checker.js'
+import { VIBECHK_SERVER } from '../storage/paths.js'
 import type { FriendEntry, PublicProfile } from '../types/index.js'
 
 const FETCH_TIMEOUT_MS = 8000
@@ -13,7 +14,7 @@ const STALE_HOURS = 25  // data older than this is shown with a warning
 // Add a friend
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function runFriendAdd(alias: string, url: string): Promise<void> {
+export async function runFriendAdd(alias: string, url?: string): Promise<void> {
   const normalized = alias.trim().toLowerCase()
   if (!normalized || !/^[\w\-\.]+$/.test(normalized)) {
     console.error(chalk.red('  Alias must be letters, numbers, - or _ only.'))
@@ -27,10 +28,13 @@ export async function runFriendAdd(alias: string, url: string): Promise<void> {
     return
   }
 
+  // If no URL given, resolve from the default server by username
+  const resolvedUrl = url?.trim() ?? `${VIBECHK_SERVER}/u/${normalized}.json`
+
   const data = loadFriends()
   const entry: FriendEntry = {
     alias: normalized,
-    url: url.trim(),
+    url: resolvedUrl,
     addedAt: new Date().toISOString(),
     lastFetchedAt: null,
     cached: null,

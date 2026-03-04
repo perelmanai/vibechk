@@ -38,34 +38,16 @@ export async function runInit(): Promise<void> {
   })
 
   const share = await confirm({
-    message: 'Share your streak on the leaderboard? (you can change this later)',
+    message: 'Share your streak on the community leaderboard? (you can change this later)',
     default: true,
   })
-
-  let cloudEndpoint = ''
-  let cloudApiKey = ''
-
-  if (share) {
-    cloudEndpoint = await input({
-      message: 'Cloud leaderboard endpoint URL (leave blank to skip for now):',
-      default: '',
-    })
-
-    if (cloudEndpoint) {
-      cloudApiKey = await input({
-        message: 'API key for that endpoint:',
-      })
-    }
-  }
 
   const profile: UserProfile = {
     id: uuidv4(),
     username: username.trim(),
     timezone: tzInput,
     createdAt: new Date().toISOString(),
-    cloudSync: cloudEndpoint
-      ? { endpoint: cloudEndpoint.replace(/\/$/, ''), apiKey: cloudApiKey, lastSyncedAt: null }
-      : null,
+    cloudSync: null,
     preferences: {
       shareOnLeaderboard: share,
       notificationsEnabled: false,

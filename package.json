@@ -25,7 +25,8 @@
     "test": "vitest",
     "test:run": "vitest run",
     "typecheck": "tsc --noEmit",
-    "start": "node dist/cli.js"
+    "start": "node dist/cli.js",
+    "server": "node dist/server.js"
   },
   "keywords": [
     "streak",
