@@ -10,7 +10,7 @@ Built for developers who use Claude Code, Cursor, Windsurf, and other AI coding 
 npm install -g vibechk
 ```
 
-## Quickstart — leaderboard with friends in 5 commands
+## Quickstart — leaderboard with friends in 4 commands
 
 ```bash
 # 1. Set up and start tracking
