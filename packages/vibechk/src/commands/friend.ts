@@ -117,15 +117,14 @@ export async function runFriendPull(options: { quiet?: boolean } = {}): Promise<
 // List friends (the main display)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function runFriendList(): void {
+export async function runFriendList(): Promise<void> {
   const profile = requireProfile()
   const myStreak = loadStreak()
   const today = todayInTz(profile.timezone)
-  const data = loadFriends()
-
-  console.log('')
+  let data = loadFriends()
 
   if (data.friends.length === 0) {
+    console.log('')
     console.log(chalk.dim('  No friends yet.\n'))
     console.log('  Share your streak URL with friends and add theirs:')
     if (data.myPublishUrl) {
@@ -137,6 +136,19 @@ export function runFriendList(): void {
     console.log(chalk.dim('\n  vibechk friend add <alias> <their-url>\n'))
     return
   }
+
+  // Auto-refresh stale data (>25h old) or friends never fetched
+  const needsRefresh = data.friends.some((f) => isStale(f) || !f.lastFetchedAt)
+  if (needsRefresh) {
+    process.stdout.write(chalk.dim(`  Refreshing ${data.friends.length} friend(s)...`))
+    const updated = await Promise.all(data.friends.map(fetchOneFriend))
+    data.friends = updated
+    saveFriends(data)
+    const ok = updated.filter((f) => f.cached !== null).length
+    console.log(chalk.green(` ${ok}/${updated.length} updated.`))
+  }
+
+  console.log('')
 
   // Sort: checked-in-today first, then by current streak desc
   const sorted = [...data.friends].sort((a, b) => {
@@ -176,10 +188,7 @@ export function runFriendList(): void {
   console.log('')
 
   // Freshness footer
-  const staleCount = data.friends.filter((f) => isStale(f)).length
-  if (staleCount > 0) {
-    console.log(chalk.yellow(`  ⚠ ${staleCount} friend(s) have stale data. Run \`vibechk friend pull\`.`))
-  } else if (data.friends.some((f) => f.lastFetchedAt)) {
+  if (data.friends.some((f) => f.lastFetchedAt)) {
     const oldest = data.friends
       .filter((f) => f.lastFetchedAt)
       .sort((a, b) => a.lastFetchedAt!.localeCompare(b.lastFetchedAt!))

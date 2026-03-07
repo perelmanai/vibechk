@@ -190,7 +190,7 @@ program
 program
   .command('friends')
   .description('Show your friends\' streaks')
-  .action(() => { requireInit(); runFriendList() })
+  .action(async () => { requireInit(); await runFriendList() })
 
 const friendCmd = program
   .command('friend')
@@ -215,7 +215,7 @@ friendCmd
 friendCmd
   .command('list')
   .description('List all friends and their streaks')
-  .action(() => { requireInit(); runFriendList() })
+  .action(async () => { requireInit(); await runFriendList() })
 
 // ── Publish ──────────────────────────────────────────────────────────────────
 

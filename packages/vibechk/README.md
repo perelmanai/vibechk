@@ -1,6 +1,6 @@
 # vibechk 🔥
 
-> Daily streak tracker for vibe coders. Tracks your AI-assisted coding sessions and lets you compare streaks with friends.
+> Daily streak tracker for vibe coders. Tracks your AI-assisted coding sessions and lets you compare streaks with friends — no server required.
 
 Built for developers who use Claude Code, Cursor, Windsurf, and other AI coding tools. Like Duolingo's streak system — but for vibe coding.
 
@@ -10,24 +10,49 @@ Built for developers who use Claude Code, Cursor, Windsurf, and other AI coding 
 npm install -g vibechk
 ```
 
-## Quick Start
+## Full Flow: Install → Track → Share → Leaderboard
+
+### 1. Set up (30 seconds)
 
 ```bash
-vibechk init          # Set up your profile (30 seconds)
-vibechk               # Auto-detect today's session & check in
-vibechk status        # See your streak, calendar, and progress
+vibechk init
 ```
 
-## How It Works
+Prompts for your username, auto-detects your timezone, and optionally installs a daily 9 PM auto-check-in job (recommended).
 
-**Session Detection:** vibechk reads your local Claude Code session logs (via `ccusage`) to automatically detect when you've done AI-assisted coding. No manual check-in required.
+---
+
+### 2. Check in
+
+```bash
+vibechk
+```
+
+Running `vibechk` with no arguments auto-detects your Claude Code sessions for the day and updates your streak. If you installed the daily scheduler during `init`, this happens automatically each evening without any action from you.
 
 ```
 $ vibechk
 
 🔥 Day 23! Streak protected.
-🔥 23-day streak
+```
 
+For a manual check-in (no auto-detection):
+
+```bash
+vibechk check-in --manual
+```
+
+---
+
+### 3. View your stats
+
+```bash
+vibechk status       # Terminal dashboard
+vibechk status --web # Visual dashboard in browser
+vibechk log          # Last 30 days as a calendar
+```
+
+```
 $ vibechk status
 ╭────────────────  vibechk  ─────────────────╮
 │ 🔥 23-day streak  ✓ Protected for today    │
@@ -37,146 +62,227 @@ $ vibechk status
 │                                            │
 │ M:✓  T:✓  W:✓  T:✓  F:✓  S:·  S:✓         │
 │                                            │
-│ March 3, 2026  │  alice_codes              │
+│ March 7, 2026  │  alice_codes              │
 ╰────────────────────────────────────────────╯
+
+$ vibechk log
+
+Last 30 days  Feb 6 – Mar 7
+  ✓ coded  · missed
+
+         Mo Tu We Th Fr Sa Su
+  Feb 6     ✓  ✓  ✓  ✓  ✓  ·
+  Feb 13  ✓  ✓  ✓  ✓  ✓  ·  ✓
+  Feb 20  ✓  ✓  ✓  ·  ✓  ✓  ✓
+  Feb 27  ✓  ✓  ✓  ✓  ✓  ·  ✓
+  Mar 6   ✓  ○
+
+  Consistency: 87% — 26 of 30 days
 ```
 
-## Commands
+---
 
-| Command | Description |
+### 4. Share your streak with friends (no server needed)
+
+**Step 1 — Publish your streak to a GitHub Gist:**
+
+```bash
+vibechk publish
+```
+
+You'll be prompted once for a GitHub personal access token (needs only the `gist` scope). vibechk creates a public Gist with your streak data and prints your shareable URL:
+
+```
+  Your friend URL: https://gist.githubusercontent.com/alice/abc123/raw/vibechk.json
+
+  Share this URL with friends so they can follow your streak:
+    vibechk friend add alice https://gist.githubusercontent.com/alice/abc123/raw/vibechk.json
+```
+
+**Step 2 — Tell your friend to add you:**
+
+Your friend runs the command above on their machine. That's it.
+
+**Step 3 — Add your friends back:**
+
+```bash
+vibechk friend add bob https://gist.githubusercontent.com/bob/xyz789/raw/vibechk.json
+```
+
+---
+
+### 5. View the leaderboard
+
+```bash
+vibechk friends
+```
+
+Shows all your friends' streaks in a ranked table. Data auto-refreshes whenever it's stale:
+
+```
+$ vibechk friends
+  Refreshing 3 friend(s)... 3/3 updated.
+
+  name          streak   today   30d%    best
+  ────────────────────────────────────────────────
+  bob           🏆 41d          97%     41d
+  carol         🔥 23d   ✓      87%     30d
+  alice         🔥 19d   ✓      80%     25d
+  ────────────────────────────────────────────────
+  you           🔥 23d   ✓      —       23d
+
+  Last synced: 0m ago
+  Your URL: https://gist.githubusercontent.com/...
+```
+
+Your streak is automatically re-published to your Gist after each auto-check-in, so your friends always see fresh data.
+
+---
+
+## Streak Mechanics
+
+### Forgiveness — two tiers
+
+**Grace period (automatic):** Miss 1 day? Your streak is preserved automatically. Resets every 14 days so it's always available for genuine one-off misses.
+
+**Freeze tokens (explicit):** Start with 2 tokens. Earn more at the 30, 60, and 90-day milestones. Use them when you know you'll miss a day:
+
+```bash
+vibechk freeze --tomorrow   # Pre-apply for a planned absence
+vibechk freeze              # Use today to recover yesterday's miss
+```
+
+### Milestones
+
+| Days | Badge | Rarity | Bonus |
+|---|---|---|---|
+| 3 | 🌱 Warming Up | Common | |
+| 7 | ⚡ Week Warrior | Common | |
+| 14 | 🚀 Fortnight Coder | Common | |
+| 30 | 🏆 Monthly Builder | Rare | +1 freeze token |
+| 60 | 💎 Two Month Grind | Rare | +1 freeze token |
+| 90 | 🔥 Quarter Strong | Epic | +1 freeze token |
+| 100 | 💯 Triple Digits | Epic | |
+| 180 | 🌟 Half Year Vibe | Legendary | |
+| 365 | 👑 Year of the Vibe | Legendary | |
+
+Hitting a milestone opens a visual celebration in your browser.
+
+---
+
+## All Commands
+
+### Daily use
+
+| Command | What it does |
 |---|---|
-| `vibechk` | Auto-detect session and check in (default) |
-| `vibechk init` | Set up profile (username, timezone, cloud sync) |
-| `vibechk check-in` | Check in today's session |
-| `vibechk check-in --manual` | Manual check-in (skip auto-detection) |
-| `vibechk status` | Show streak dashboard in terminal |
-| `vibechk status --web` | Open visual dashboard in browser |
-| `vibechk dashboard` | Open visual browser dashboard |
-| `vibechk freeze` | Manage freeze tokens |
-| `vibechk freeze --tomorrow` | Pre-apply freeze for a planned absence |
-| `vibechk leaderboard` | View community streak leaderboard |
-| `vibechk leaderboard --web` | Leaderboard in browser |
-| `vibechk sync` | Push streak to cloud leaderboard |
+| `vibechk` | Auto-detect session and check in |
+| `vibechk check-in --manual` | Check in without auto-detection |
+| `vibechk status` | Terminal streak dashboard |
+| `vibechk status --web` | Visual dashboard in browser |
+| `vibechk log` | Last 30 days as a calendar grid |
+| `vibechk share` | Generate a shareable streak summary (copies to clipboard) |
+
+### Scheduler
+
+| Command | What it does |
+|---|---|
+| `vibechk schedule` | Install daily 9 PM auto-check-in (macOS/Linux) |
+| `vibechk schedule --time 20:00` | Install at a custom time |
+| `vibechk schedule --remove` | Remove the scheduled job |
+| `vibechk schedule --status` | Check if a schedule is installed |
+
+### Friends & sharing
+
+| Command | What it does |
+|---|---|
+| `vibechk publish` | Publish streak to GitHub Gist (first run prompts for token) |
+| `vibechk friends` | Show friends' streaks (auto-refreshes stale data) |
+| `vibechk friend add <alias> <url>` | Subscribe to a friend's streak |
+| `vibechk friend remove <alias>` | Unsubscribe from a friend |
+| `vibechk friend pull` | Force-refresh all friends now |
+
+### Freeze tokens
+
+| Command | What it does |
+|---|---|
+| `vibechk freeze` | Use a token to recover from yesterday's miss |
+| `vibechk freeze --tomorrow` | Pre-apply a token for tomorrow |
+
+### Data
+
+| Command | What it does |
+|---|---|
 | `vibechk export` | Export all data as JSON |
 
-## Streak Psychology
-
-vibechk is built around healthy habit psychology:
-
-**Loss aversion:** Your streak display reminds you "Your 23-day streak is protected" — you've invested in it and the thought of losing it motivates you to keep going.
-
-**Forgiveness mechanics (two-tier):**
-- **Grace period** (automatic): Miss 1 day → streak auto-preserved. Once per 14 days.
-- **Freeze tokens** (explicit): Start with 2 tokens. Earn more at 30, 60, 90 day milestones. Use with `vibechk freeze` for planned absences.
-
-**Milestone system:**
-
-| Days | Badge | Rarity |
-|---|---|---|
-| 3 | 🌱 Warming Up | Common |
-| 7 | ⚡ Week Warrior | Common |
-| 14 | 🚀 Fortnight Coder | Common |
-| 30 | 🏆 Monthly Builder | Rare (+1 freeze token) |
-| 60 | 💎 Two Month Grind | Rare (+1 freeze token) |
-| 90 | 🔥 Quarter Strong | Epic (+1 freeze token) |
-| 100 | 💯 Triple Digits | Epic |
-| 180 | 🌟 Half Year Vibe | Legendary |
-| 365 | 👑 Year of the Vibe | Legendary |
-
-Milestone achievements open a visual celebration in your browser.
-
-## Visual Dashboard
-
-```bash
-vibechk dashboard
-```
-
-Opens a beautiful dashboard in your browser showing:
-- Streak hero card with live countdown
-- 90-day activity calendar (GitHub contribution graph style)
-- Leaderboard (if configured)
-- All milestones with earned/locked status
-
-## Leaderboard (Cloud Sync)
-
-Opt-in to compare streaks with friends. You need a shared server endpoint.
-
-```bash
-# During init, or update later:
-vibechk config cloudSync.endpoint https://your-server.com
-vibechk config cloudSync.apiKey your-api-key
-
-# Push your streak
-vibechk sync
-
-# View leaderboard
-vibechk leaderboard
-```
-
-The leaderboard shows your rank relative to peers, with freeze usage transparently displayed:
-
-```
-Leaderboard (team.example.com) — updated 5m ago
-
-  Rank  Name              Streak   Longest   Badges
-  ─────────────────────────────────────────────────
-     1  alice_codes         87d      112d    🏆💎🔥
-  →  2  you                 23d       23d    ⚡
-     3  bob_builds          21d       65d    ⚡ (1❄)
-```
+---
 
 ## Session Detection
 
-vibechk auto-detects Claude Code sessions by scanning your local session logs at `~/.config/claude/projects/**/*.jsonl`. It also supports the `ccusage` CLI if you have it installed.
+vibechk auto-detects coding sessions by scanning your local Claude Code session logs at `~/.config/claude/projects/**/*.jsonl`. Detection runs at check-in time — nothing runs in the background between check-ins.
 
-**Sources (configurable):**
-- `claude-code` — Claude Code session logs (default)
-- `manual` — Explicit `vibechk check-in` command
-- `git-hook` — Git post-commit hook (`vibechk install-hook`)
+**Supported sources:**
+- `claude-code` — Claude Code session logs (default, no config needed)
+- `git` — Git commits in watched repos (opt-in via `init`)
+- `manual` — `vibechk check-in --manual`
+
+---
+
+## Automatic daily tracking
+
+Install the scheduler once and vibechk runs itself every evening:
+
+```bash
+vibechk schedule           # installs at 9 PM (macOS: launchd, Linux: cron)
+vibechk schedule --time 20:00   # different time
+```
+
+The scheduler runs `vibechk check-in --no-interactive --quiet` — it only records a streak day when a coding session is actually detected, then silently re-publishes your Gist so friends see fresh data.
+
+---
 
 ## Scripting / CI
 
-All commands support scripting flags:
-
 ```bash
-# Silent mode (exit code only: 0=success, 1=broken, 2=already checked in)
-vibechk check-in -q
-
-# JSON output
+vibechk check-in --quiet            # minimal output
+vibechk check-in --json             # structured JSON output
+vibechk check-in --no-interactive   # no prompts (for scripts/CI)
 vibechk status --json
-
-# Non-interactive (no prompts)
-vibechk check-in --no-interactive --auto-freeze
 ```
 
 ## Programmatic API
 
 ```typescript
-import { checkIn, getStreak, getLeaderboard } from 'vibechk'
+import { checkIn, getStreak, getProfile, exportData } from 'vibechk'
 
 const result = await checkIn({ source: 'api', notes: 'Built auth flow' })
 // { action: 'continued', streak: 24, newMilestones: [], freezeTokensRemaining: 2 }
 
 const streak = getStreak()
-// { currentStreak: 24, longestStreak: 24, status: 'active', ... }
+// { currentStreak: 24, longestStreak: 24, status: 'active', freezeTokens: 2, ... }
 ```
+
+---
 
 ## Data & Privacy
 
-All data stored locally in `~/.vibechk/` (mode 700):
+All data stored locally in `~/.vibechk/`:
 
 ```
 ~/.vibechk/
 ├── profile.json      # Username, timezone, preferences
 ├── streak.json       # Current streak state
-├── activity.jsonl    # Full activity log
+├── activity.jsonl    # Full activity log (never published)
 ├── badges.json       # Earned milestones
-└── leaderboard.json  # Cached leaderboard (1hr TTL)
+├── friends.json      # Friend subscriptions + cached data
+└── gist-token        # GitHub token (gist scope only)
 ```
 
 - **No telemetry.** No analytics. No ping-home on install or run.
-- **Cloud is opt-in.** Your endpoint, your key, your data.
+- **Activity log is private.** Only your public summary (streak counts, badges) is published to your Gist.
 - **Export anytime:** `vibechk export > backup.json`
+
+---
 
 ## License
 

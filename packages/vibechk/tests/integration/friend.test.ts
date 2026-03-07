@@ -304,26 +304,26 @@ describe('friend commands', () => {
   // ──────────────────────────────────────────────────────────
 
   describe('runFriendList', () => {
-    it('shows empty state with publish hint when no friends', () => {
-      runFriendList()
+    it('shows empty state with publish hint when no friends', async () => {
+      await runFriendList()
       const output = consoleSpy.mock.calls.flat().join('\n')
       expect(output).toContain('No friends yet')
     })
 
-    it('renders a row for each friend with cached data', () => {
+    it('renders a row for each friend with cached data', async () => {
       mockLoadFriends.mockReturnValue(
         makeFriendsFile([
           makeFriendEntry('alice', makePublicProfile({ username: 'alice', currentStreak: 7 })),
           makeFriendEntry('bob', makePublicProfile({ username: 'bob', currentStreak: 3 })),
         ])
       )
-      runFriendList()
+      await runFriendList()
       const output = consoleSpy.mock.calls.flat().join('\n')
       expect(output).toContain('alice')
       expect(output).toContain('bob')
     })
 
-    it('sorts checked-in-today before not-yet-checked', () => {
+    it('sorts checked-in-today before not-yet-checked', async () => {
       const checkedIn = makeFriendEntry(
         'bob',
         makePublicProfile({ username: 'bob', currentStreak: 1, lastActiveDate: TODAY })
@@ -335,49 +335,57 @@ describe('friend commands', () => {
       // alice has higher streak but hasn't checked in today
       mockLoadFriends.mockReturnValue(makeFriendsFile([notCheckedIn, checkedIn]))
 
-      runFriendList()
+      await runFriendList()
 
       const output = consoleSpy.mock.calls.flat().join('\n')
       expect(output.indexOf('bob')).toBeLessThan(output.indexOf('alice'))
     })
 
-    it('shows stale warning when lastFetchedAt is >25h ago', () => {
+    it('auto-refreshes stale friends before displaying', async () => {
+      const freshProfile = makePublicProfile({ currentStreak: 12 })
+      vi.mocked(fetch).mockResolvedValue({
+        ok: true,
+        json: async () => freshProfile,
+      } as Response)
+
       const staleEntry: FriendEntry = {
-        ...makeFriendEntry('alice', makePublicProfile()),
+        ...makeFriendEntry('alice', makePublicProfile({ currentStreak: 5 })),
         lastFetchedAt: new Date(Date.now() - 30 * 3600 * 1000).toISOString(),
       }
       mockLoadFriends.mockReturnValue(makeFriendsFile([staleEntry]))
 
-      runFriendList()
+      await runFriendList()
 
+      expect(vi.mocked(fetch)).toHaveBeenCalledOnce()
+      expect(mockSaveFriends).toHaveBeenCalled()
       const output = consoleSpy.mock.calls.flat().join('\n')
-      expect(output).toContain('stale')
+      expect(output).toContain('1/1 updated')
     })
 
-    it('shows your own row at the bottom', () => {
+    it('shows your own row at the bottom', async () => {
       mockLoadFriends.mockReturnValue(
         makeFriendsFile([makeFriendEntry('alice', makePublicProfile())])
       )
-      runFriendList()
+      await runFriendList()
       const output = consoleSpy.mock.calls.flat().join('\n')
       expect(output).toContain('you')
     })
 
-    it('shows your publish URL when available', () => {
+    it('shows your publish URL when available', async () => {
       const file = makeFriendsFile([makeFriendEntry('alice', makePublicProfile())])
       file.myPublishUrl = 'https://gist.githubusercontent.com/me/123/raw/vibechk.json'
       mockLoadFriends.mockReturnValue(file)
 
-      runFriendList()
+      await runFriendList()
       const output = consoleSpy.mock.calls.flat().join('\n')
       expect(output).toContain(file.myPublishUrl)
     })
 
-    it('prompts to publish when no URL set', () => {
+    it('prompts to publish when no URL set', async () => {
       mockLoadFriends.mockReturnValue(
         makeFriendsFile([makeFriendEntry('alice', makePublicProfile())])
       )
-      runFriendList()
+      await runFriendList()
       const output = consoleSpy.mock.calls.flat().join('\n')
       expect(output).toContain('vibechk publish')
     })
