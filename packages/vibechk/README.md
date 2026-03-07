@@ -10,6 +10,30 @@ Built for developers who use Claude Code, Cursor, Windsurf, and other AI coding 
 npm install -g vibechk
 ```
 
+## Quickstart — leaderboard with friends in 5 commands
+
+```bash
+# 1. You (and each friend) set up and start tracking
+vibechk init        # username + timezone + install daily auto-check-in
+vibechk             # first check-in (auto-detects Claude Code sessions)
+
+# 2. Publish your streak to a GitHub Gist (one-time token prompt)
+vibechk publish     # prints your shareable URL
+
+# 3. Share that URL with a friend; they run:
+vibechk friend add <your-name> <your-url>
+
+# 4. Add them back (use the URL they got from their own `vibechk publish`)
+vibechk friend add <their-name> <their-url>
+
+# 5. See the leaderboard
+vibechk friends
+```
+
+That's it — no server, no account, no config file. After setup, `vibechk friends` auto-refreshes data and shows everyone's current streak ranked.
+
+---
+
 ## Full Flow: Install → Track → Share → Leaderboard
 
 ### 1. Set up (30 seconds)
