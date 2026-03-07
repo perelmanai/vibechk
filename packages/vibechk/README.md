@@ -15,7 +15,6 @@ npm install -g vibechk
 ```bash
 # 1. Set up and start tracking
 vibechk init        # username + timezone + install daily auto-check-in
-vibechk             # first check-in (auto-detects Claude Code sessions)
 
 # 2. Get a GitHub token, then publish your streak to a Gist
 #    → go to https://github.com/settings/tokens/new?scopes=gist
@@ -49,22 +48,18 @@ Prompts for your username, auto-detects your timezone, and optionally installs a
 
 ### 2. Check in
 
-```bash
-vibechk
-```
-
-Running `vibechk` with no arguments auto-detects your Claude Code sessions for the day and updates your streak. If you installed the daily scheduler during `init`, this happens automatically each evening without any action from you.
+The scheduler installed during `init` handles check-ins automatically each evening — it scans your Claude Code session logs and updates your streak without any action from you.
 
 ```
-$ vibechk
-
+# Runs automatically via launchd (macOS) or cron (Linux) at 9 PM
 🔥 Day 23! Streak protected.
 ```
 
-For a manual check-in (no auto-detection):
+If you need to trigger a check-in manually:
 
 ```bash
-vibechk check-in --manual
+vibechk check-in            # auto-detect Claude Code sessions
+vibechk check-in --manual   # skip auto-detection
 ```
 
 ---
@@ -201,7 +196,8 @@ Hitting a milestone opens a visual celebration in your browser.
 
 | Command | What it does |
 |---|---|
-| `vibechk` | Auto-detect session and check in |
+| `vibechk` | Terminal streak dashboard |
+| `vibechk check-in` | Manually trigger a check-in (auto-detects Claude Code sessions) |
 | `vibechk check-in --manual` | Check in without auto-detection |
 | `vibechk status` | Terminal streak dashboard |
 | `vibechk status --web` | Visual dashboard in browser |

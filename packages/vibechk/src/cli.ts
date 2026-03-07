@@ -21,7 +21,7 @@ program
   .description('Daily streak tracker for vibe coders')
   .version('0.1.0')
 
-// Default action (no subcommand) = check-in
+// Default action (no subcommand) = status
 program
   .action(async () => {
     if (!dataExists()) {
@@ -29,7 +29,7 @@ program
       await runInit()
       return
     }
-    await runCheckIn({ openDashboard: false })
+    await runStatus({ quiet: false })
   })
 
 program
