@@ -13,20 +13,21 @@ npm install -g vibechk
 ## Quickstart — leaderboard with friends in 5 commands
 
 ```bash
-# 1. You (and each friend) set up and start tracking
+# 1. Set up and start tracking
 vibechk init        # username + timezone + install daily auto-check-in
 vibechk             # first check-in (auto-detects Claude Code sessions)
 
-# 2. Publish your streak to a GitHub Gist (one-time token prompt)
-vibechk publish     # prints your shareable URL
+# 2. Get a GitHub token, then publish your streak to a Gist
+#    → go to https://github.com/settings/tokens/new?scopes=gist
+#    → generate a token with only the "gist" scope
+#    → paste it when prompted
+vibechk publish     # prints your shareable URL — send it to friends
 
-# 3. Share that URL with a friend; they run:
-vibechk friend add <your-name> <your-url>
+# 3. Add friends (use the URL they got from their own `vibechk publish`)
+vibechk friend add alice https://gist.githubusercontent.com/alice/abc/raw/vibechk.json
+vibechk friend add bob   https://gist.githubusercontent.com/bob/xyz/raw/vibechk.json
 
-# 4. Add them back (use the URL they got from their own `vibechk publish`)
-vibechk friend add <their-name> <their-url>
-
-# 5. See the leaderboard
+# 4. See the leaderboard
 vibechk friends
 ```
 
