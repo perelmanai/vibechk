@@ -113,7 +113,7 @@ vibechk publish
 You'll be prompted once for a GitHub personal access token (needs only the `gist` scope). vibechk creates a public Gist with your streak data and prints your shareable URL:
 
 ```
-  Your friend URL: https://gist.githubusercontent.com/alice/abc123/raw/vibechk.json
+  Your shareable URL: https://gist.githubusercontent.com/alice/abc123/raw/vibechk.json
 
   Share this URL with friends so they can follow your streak:
     vibechk friend add alice https://gist.githubusercontent.com/alice/abc123/raw/vibechk.json

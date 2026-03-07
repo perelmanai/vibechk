@@ -205,7 +205,7 @@ async function publishToGist(
     if (!options.silent) {
       console.log(chalk.green(' ✓'))
       console.log('')
-      console.log(`  ${chalk.bold('Your friend URL:')} ${chalk.cyan(rawUrl)}`)
+      console.log(`  ${chalk.bold('Your shareable URL:')} ${chalk.cyan(rawUrl)}`)
       console.log('')
       console.log(chalk.dim('  Share this URL with friends so they can follow your streak:'))
       console.log(chalk.dim(`    vibechk friend add ${profile.username} ${rawUrl}`))
