@@ -4,9 +4,8 @@ import { requireProfile } from '../storage/profile-store.js'
 import { loadStreak } from '../storage/streak-store.js'
 import { loadActivity } from '../storage/activity-store.js'
 import { loadBadges } from '../storage/badge-store.js'
-import { loadFriends, saveFriends, loadGistToken, saveGistToken } from '../storage/friends-store.js'
+import { loadFriends, saveFriends, loadGistToken, saveGistToken, getPublishEndpoint } from '../storage/friends-store.js'
 import { todayInTz } from '../core/date-utils.js'
-import { VIBECHK_SERVER } from '../storage/paths.js'
 import type { PublicProfile, UserProfile } from '../types/index.js'
 
 const GIST_API = 'https://api.github.com'
@@ -44,9 +43,10 @@ export function buildPublicProfile(
 
 export async function runPublish(options: {
   gist?: boolean
+  endpoint?: string          // explicit endpoint URL (saved for future use)
   stdout?: boolean
   token?: string
-  silent?: boolean  // used by the daily auto-publish after check-in
+  silent?: boolean           // used by the daily auto-publish after check-in
 } = {}): Promise<string | null> {
   const profile = requireProfile()
   const streak = loadStreak()
@@ -77,29 +77,42 @@ export async function runPublish(options: {
     return null
   }
 
-  // ── Gist mode (opt-in via --gist) ─────────────────────────────────────────
+  // ── Force Gist ─────────────────────────────────────────────────────────────
   if (options.gist) {
-    return publishToGist(profile, payload, json, options)
+    return publishToGist(profile, json, options)
   }
 
-  // ── Server mode (default) ──────────────────────────────────────────────────
-  return publishToServer(profile, payload, json, options.silent ?? false)
+  // ── Endpoint mode: explicit flag > env var > saved endpoint ────────────────
+  const endpoint = options.endpoint
+    ? options.endpoint.replace(/\/$/, '')
+    : getPublishEndpoint()
+
+  if (endpoint) {
+    return publishToEndpoint(profile, json, endpoint, options.silent ?? false)
+  }
+
+  // ── Default: Gist (standalone, works without any server) ───────────────────
+  return publishToGist(profile, json, options)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Server publish (default)
+// Remote endpoint publish
+//
+// Works with any server that implements:
+//   PUT /api/users/:uuid  { Authorization: Bearer <uuid>, body: PublicProfile }
+//   → { username, url, jsonUrl }
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function publishToServer(
+async function publishToEndpoint(
   profile: UserProfile,
-  payload: PublicProfile,
   json: string,
+  endpoint: string,
   silent: boolean,
 ): Promise<string | null> {
   try {
-    if (!silent) process.stdout.write(chalk.dim(`  Publishing to ${VIBECHK_SERVER}...`))
+    if (!silent) process.stdout.write(chalk.dim(`  Publishing to ${endpoint}...`))
 
-    const res = await fetch(`${VIBECHK_SERVER}/api/users/${profile.id}`, {
+    const res = await fetch(`${endpoint}/api/users/${profile.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -110,12 +123,14 @@ async function publishToServer(
       signal: AbortSignal.timeout(10000),
     })
 
-    if (!res.ok) throw new Error(`Server ${res.status}: ${res.statusText}`)
+    if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`)
 
     const data = await res.json() as { username: string; url: string; jsonUrl: string }
 
+    // Save endpoint + URL for future use
     const friends = loadFriends()
     friends.myPublishUrl = data.jsonUrl
+    friends.publishEndpoint = endpoint
     saveFriends(friends)
 
     if (!silent) {
@@ -123,8 +138,11 @@ async function publishToServer(
       console.log('')
       console.log(`  ${chalk.bold('Your profile:')} ${chalk.cyan(data.url)}`)
       console.log('')
-      console.log(chalk.dim('  Share this with friends, or tell them to run:'))
-      console.log(chalk.dim(`  vibechk friend add ${profile.username}`))
+      console.log(chalk.dim('  Friends on the same server can add you by username:'))
+      console.log(chalk.dim(`    vibechk friend add ${profile.username}`))
+      console.log('')
+      console.log(chalk.dim('  Or share your direct URL:'))
+      console.log(chalk.dim(`    vibechk friend add ${profile.username} ${data.jsonUrl}`))
       console.log('')
     }
 
@@ -132,19 +150,19 @@ async function publishToServer(
   } catch (err: any) {
     if (!silent) {
       console.log(chalk.red(` ✗ ${err.message}`))
-      console.log(chalk.dim(`\n  Set VIBECHK_SERVER to point at your own server, or use --gist.`))
+      console.log(chalk.dim('\n  Check that the endpoint is reachable and supports the vibechk API.'))
+      console.log(chalk.dim('  Use --gist to publish via GitHub Gist instead.'))
     }
     return null
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Gist publish (opt-in)
+// GitHub Gist publish (default standalone mode)
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function publishToGist(
   profile: UserProfile,
-  _payload: PublicProfile,
   json: string,
   options: { token?: string; silent?: boolean },
 ): Promise<string | null> {
@@ -153,14 +171,18 @@ async function publishToGist(
   if (!token) {
     if (options.silent) return null
     console.log('')
-    console.log(chalk.bold('  Publish your streak to a GitHub Gist'))
+    console.log(chalk.bold('  Publish your streak via GitHub Gist'))
+    console.log('')
     console.log(chalk.dim('  This creates a public JSON file that friends can subscribe to.'))
     console.log(chalk.dim('  You need a GitHub personal access token with the `gist` scope.'))
-    console.log(chalk.dim('  Create one at: https://github.com/settings/tokens/new?scopes=gist'))
+    console.log('')
+    console.log(chalk.dim('  1. Go to https://github.com/settings/tokens/new?scopes=gist'))
+    console.log(chalk.dim('  2. Create a token with just the "gist" scope'))
+    console.log(chalk.dim('  3. Paste it below'))
     console.log('')
     token = await input({ message: 'GitHub token (gist scope):' })
     if (!token.trim()) {
-      console.log(chalk.dim('  Skipped. Run `vibechk publish --gist` when you have a token.'))
+      console.log(chalk.dim('  Skipped. Run `vibechk publish` again when ready.'))
       return null
     }
     saveGistToken(token.trim())
@@ -185,8 +207,8 @@ async function publishToGist(
       console.log('')
       console.log(`  ${chalk.bold('Your friend URL:')} ${chalk.cyan(rawUrl)}`)
       console.log('')
-      console.log(chalk.dim('  Share this with friends so they can follow your streak:'))
-      console.log(chalk.dim(`  vibechk friend add ${profile.username} ${rawUrl}`))
+      console.log(chalk.dim('  Share this URL with friends so they can follow your streak:'))
+      console.log(chalk.dim(`    vibechk friend add ${profile.username} ${rawUrl}`))
       console.log('')
     }
 
@@ -195,8 +217,8 @@ async function publishToGist(
     if (!options.silent) {
       console.log(chalk.red(` ✗ ${err.message}`))
       if (err.message.includes('401') || err.message.includes('403')) {
-        console.log(chalk.dim('\n  Token may be expired or missing gist scope.'))
-        console.log(chalk.dim('  Delete ~/.vibechk/gist-token and run `vibechk publish --gist` again.'))
+        console.log(chalk.dim('\n  Token may be expired or missing the gist scope.'))
+        console.log(chalk.dim('  Delete ~/.vibechk/gist-token and run `vibechk publish` again.'))
       }
     }
     return null
@@ -204,7 +226,7 @@ async function publishToGist(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GitHub Gist API
+// GitHub Gist API helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface GistResult {

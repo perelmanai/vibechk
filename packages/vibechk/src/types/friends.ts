@@ -32,6 +32,7 @@ export interface FriendEntry {
 export interface FriendsFile {
   version: 1
   friends: FriendEntry[]
-  myPublishUrl: string | null   // your own Gist URL (shareable with friends)
-  gistId: string | null         // GitHub Gist ID if published there
+  myPublishUrl: string | null       // your published profile URL (shareable with friends)
+  gistId: string | null             // Gist ID if published via GitHub Gist
+  publishEndpoint: string | null    // saved remote endpoint base URL (e.g. from VIBECHK_SERVER)
 }

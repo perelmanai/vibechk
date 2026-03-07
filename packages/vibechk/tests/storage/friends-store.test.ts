@@ -44,7 +44,7 @@ const makeFriend = (alias: string): FriendEntry => ({
   cached: null,
 })
 
-const DEFAULT_FILE: FriendsFile = { version: 1, friends: [], myPublishUrl: null, gistId: null }
+const DEFAULT_FILE: FriendsFile = { version: 1, friends: [], myPublishUrl: null, gistId: null, publishEndpoint: null }
 
 afterAll(() => {
   try { rmSync(testDir, { recursive: true }) } catch {}
@@ -80,6 +80,7 @@ describe('friends-store', () => {
         friends: [makeFriend('alice'), makeFriend('bob')],
         myPublishUrl: 'https://gist.githubusercontent.com/me/123/raw/vibechk.json',
         gistId: 'abc123',
+        publishEndpoint: null,
       }
       saveFriends(data)
       expect(loadFriends()).toEqual(data)

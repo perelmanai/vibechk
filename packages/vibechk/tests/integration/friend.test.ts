@@ -5,6 +5,7 @@ vi.mock('../../src/storage/friends-store.js', () => ({
   loadFriends: vi.fn(),
   saveFriends: vi.fn(),
   getFriendByAlias: vi.fn(),
+  getPublishEndpoint: vi.fn(),
   loadGistToken: vi.fn(),
   saveGistToken: vi.fn(),
 }))
@@ -33,7 +34,7 @@ vi.mock('../../src/core/milestone-checker.js', () => ({
   totalFreezeReward: vi.fn(),
 }))
 vi.mock('../../src/storage/paths.js', () => ({
-  VIBECHK_SERVER: 'https://vibechk.test',
+  VIBECHK_SERVER: null,
   VIBECHK_DIR: '/tmp/vibechk-test',
   FRIENDS_PATH: '/tmp/vibechk-test/friends.json',
   GIST_TOKEN_PATH: '/tmp/vibechk-test/gist-token',
@@ -42,7 +43,7 @@ vi.mock('../../src/storage/paths.js', () => ({
 }))
 
 import { runFriendAdd, runFriendRemove, runFriendList, runFriendPull } from '../../src/commands/friend.js'
-import { loadFriends, saveFriends, getFriendByAlias } from '../../src/storage/friends-store.js'
+import { loadFriends, saveFriends, getFriendByAlias, getPublishEndpoint } from '../../src/storage/friends-store.js'
 import { requireProfile } from '../../src/storage/profile-store.js'
 import { loadStreak } from '../../src/storage/streak-store.js'
 import { todayInTz } from '../../src/core/date-utils.js'
@@ -92,6 +93,7 @@ const makeFriendsFile = (friends: FriendEntry[] = []): FriendsFile => ({
   friends,
   myPublishUrl: null,
   gistId: null,
+  publishEndpoint: null,
 })
 
 const makePublicProfile = (overrides: Partial<PublicProfile> = {}): PublicProfile => ({
@@ -125,6 +127,7 @@ describe('friend commands', () => {
 
     mockLoadFriends.mockReturnValue(makeFriendsFile())
     mockGetFriendByAlias.mockReturnValue(null)
+    vi.mocked(getPublishEndpoint).mockReturnValue(null)
     mockRequireProfile.mockReturnValue(makeProfile())
     mockLoadStreak.mockReturnValue(makeStreak())
     mockTodayInTz.mockReturnValue(TODAY)
@@ -216,7 +219,8 @@ describe('friend commands', () => {
       expect(mockSaveFriends).toHaveBeenCalledOnce()
     })
 
-    it('resolves URL from server when no URL given', async () => {
+    it('resolves URL from endpoint when no URL given', async () => {
+      vi.mocked(getPublishEndpoint).mockReturnValue('https://my-endpoint.test')
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
         json: async () => makePublicProfile({ username: 'alice' }),
@@ -226,14 +230,15 @@ describe('friend commands', () => {
       mockSaveFriends.mockImplementation((data) => { savedData = data })
 
       await runFriendAdd('alice')  // no URL
-      expect(savedData!.friends[0].url).toBe('https://vibechk.test/u/alice.json')
+      expect(savedData!.friends[0].url).toBe('https://my-endpoint.test/u/alice.json')
       expect(vi.mocked(fetch)).toHaveBeenCalledWith(
-        'https://vibechk.test/u/alice.json',
+        'https://my-endpoint.test/u/alice.json',
         expect.objectContaining({ headers: expect.anything() }),
       )
     })
 
-    it('explicit URL overrides server resolution', async () => {
+    it('explicit URL overrides endpoint resolution', async () => {
+      vi.mocked(getPublishEndpoint).mockReturnValue('https://my-endpoint.test')
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
         json: async () => makePublicProfile({ username: 'alice' }),
@@ -244,6 +249,17 @@ describe('friend commands', () => {
 
       await runFriendAdd('alice', 'https://custom.example.com/alice.json')
       expect(savedData!.friends[0].url).toBe('https://custom.example.com/alice.json')
+    })
+
+    it('exits with error when no URL and no endpoint configured', async () => {
+      vi.mocked(getPublishEndpoint).mockReturnValue(null)
+      const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
+        throw new Error('process.exit')
+      }) as any)
+
+      await expect(runFriendAdd('alice')).rejects.toThrow('process.exit')
+      expect(exitSpy).toHaveBeenCalledWith(1)
+      expect(mockSaveFriends).not.toHaveBeenCalled()
     })
   })
 

@@ -2,7 +2,11 @@ import { homedir } from 'os'
 import { join } from 'path'
 import { mkdirSync, existsSync, chmodSync } from 'fs'
 
-export const VIBECHK_SERVER = (process.env.VIBECHK_SERVER ?? 'https://vibechk.dev').replace(/\/$/, '')
+// Remote endpoint for publishing / friend resolution.
+// No default — standalone usage works via GitHub Gist.
+// Set VIBECHK_SERVER env var to use a remote server.
+export const VIBECHK_SERVER: string | null =
+  process.env.VIBECHK_SERVER ? process.env.VIBECHK_SERVER.replace(/\/$/, '') : null
 
 export const VIBECHK_DIR = join(homedir(), '.vibechk')
 export const PROFILE_PATH = join(VIBECHK_DIR, 'profile.json')

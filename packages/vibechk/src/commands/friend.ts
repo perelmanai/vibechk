@@ -1,10 +1,9 @@
 import chalk from 'chalk'
-import { loadFriends, saveFriends, getFriendByAlias } from '../storage/friends-store.js'
+import { loadFriends, saveFriends, getFriendByAlias, getPublishEndpoint } from '../storage/friends-store.js'
 import { requireProfile } from '../storage/profile-store.js'
 import { loadStreak } from '../storage/streak-store.js'
 import { todayInTz, daysBetween, friendlyDate } from '../core/date-utils.js'
 import { getAllMilestones } from '../core/milestone-checker.js'
-import { VIBECHK_SERVER } from '../storage/paths.js'
 import type { FriendEntry, PublicProfile } from '../types/index.js'
 
 const FETCH_TIMEOUT_MS = 8000
@@ -28,8 +27,24 @@ export async function runFriendAdd(alias: string, url?: string): Promise<void> {
     return
   }
 
-  // If no URL given, resolve from the default server by username
-  const resolvedUrl = url?.trim() ?? `${VIBECHK_SERVER}/u/${normalized}.json`
+  // Resolve the profile URL
+  let resolvedUrl: string
+  if (url?.trim()) {
+    resolvedUrl = url.trim()
+  } else {
+    const endpoint = getPublishEndpoint()
+    if (endpoint) {
+      resolvedUrl = `${endpoint}/u/${normalized}.json`
+    } else {
+      console.error(chalk.red('  No URL provided and no remote endpoint configured.'))
+      console.log('')
+      console.log(chalk.dim('  Provide the friend\'s profile URL:'))
+      console.log(chalk.dim(`    vibechk friend add ${normalized} https://...`))
+      console.log('')
+      console.log(chalk.dim('  Or set a remote endpoint via the VIBECHK_SERVER env var.'))
+      process.exit(1)
+    }
+  }
 
   const data = loadFriends()
   const entry: FriendEntry = {
